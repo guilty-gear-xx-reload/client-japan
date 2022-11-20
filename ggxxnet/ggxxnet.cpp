@@ -1928,6 +1928,18 @@ void ggn_drawRankAndWin(DWORD p_side)
 	}
 }
 
+std::vector<std::string> getConfig() {
+	std::ifstream configFile("config.txt");
+	std::vector<std::string> config;
+	std::string line;
+	while (std::getline(configFile, line))
+	{
+		config.push_back(line);
+	}
+	configFile.close();
+	return config;
+}
+
 void ggn_endBattle(void)
 {
 	if (*GGXX_MODE1 & 0x200000)
@@ -1944,31 +1956,28 @@ void ggn_endBattle(void)
 
 		char response[1024];
 		char command[256];
-		std::ifstream configFile("config.txt");
-		std::vector<std::string> config;
-		std::string line;
-		while (std::getline(configFile, line))
-		{
-			config.push_back(line);
-		}
-		configFile.close();
+		std::vector<std::string> config = getConfig();
 		std::string playerId = config.back();
+		config.pop_back();
+		std::string path = config.back();
 		config.pop_back();
 		std::string server = config.back();
 		config.pop_back();
 		sprintf(command, "{\"playerId\": \"%s\"}", playerId.c_str());
-
+		std::string addressWin = path + "/win";
+		std::string addressLose = path + "/lose";
+		std::string addressDraw = path + "/draw";
 		if (win == 1)
 		{
-			makePost(command, strlen(command), 1024, server, "/win", response);
+			makePost(command, strlen(command), 1024, server, addressWin, response);
 		}
 		else if (win == 0)
 		{
-			makePost(command, strlen(command), 1024, server, "/lose", response);
+			makePost(command, strlen(command), 1024, server, addressLose, response);
 		}
 		else if (win == 2)
 		{
-			makePost(command, strlen(command), 1024, server, "/draw", response);
+			makePost(command, strlen(command), 1024, server, addressDraw, response);
 		}
 
 		// リプレイに終端を付加する
@@ -3114,17 +3123,7 @@ void ggn_render(void)
 #endif
 }
 
-std::vector<std::string> getConfig() {
-	std::ifstream configFile("config.txt");
-	std::vector<std::string> config;
-	std::string line;
-	while (std::getline(configFile, line))
-	{
-		config.push_back(line);
-	}
-	configFile.close();
-	return config;
-}
+
 void enterServer(bool p_busy)
 {
 	char response[1024];
@@ -3136,7 +3135,7 @@ void enterServer(bool p_busy)
 	config.pop_back();
 	std::string server = config.back();
 	config.pop_back();
-	sprintf(command, "{\"playerId\": \"%s\"}", playerId.c_str());
+	sprintf(command, "{\"playerId\": \"%s\",\"port\": %d}", playerId.c_str(), g_setting.port);
 	std::string address = path + "/enter";
 	makePost(command, strlen(command), 1024, server, address, response);
 	SETFCW(DEFAULT_CW);

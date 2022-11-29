@@ -31,20 +31,6 @@
 // const
 //******************************************************************
 
-char g_paletteNames[CHARACOUNT][256] = {
-	"P(Default)",
-	"K",
-	"S",
-	"HS",
-	"Start",
-	"D",
-	"P(Sp)",
-	"K(Sp)",
-	"S(Sp)",
-	"HS(Sp)",
-	"Start(Sp)",
-	"D(Sp)",
-};
 
 char g_charaNames[CHARACOUNT][256] = {
 	"Sol",
@@ -130,7 +116,7 @@ char				g_machineID[10];
 DWORD				g_scriptCode;
 DWORD				g_startBattleTime;
 WORD				g_oldCS = 1;
-
+char*               PALLETE_NAME_SUFFIX = "skin";
 //-------------------------------------------------------debug
 CRITICAL_SECTION	g_csLogOut;
 char* g_netLog = NULL;
@@ -3314,10 +3300,10 @@ void readUserPalette(void)
 		{
 			char fname[1024];
 
-			sprintf(fname, "pal\\%s_%s.pal", g_charaNames[i], g_paletteNames[j]);
+			sprintf(fname, "pal\\%s_%s.pal", g_charaNames[i], PALLETE_NAME_SUFFIX);
 
 			FILE* fp = fopen(fname, "rb");
-			if (fp)
+			if (fp) 
 			{
 				DWORD* palette = new DWORD[PALLEN];
 

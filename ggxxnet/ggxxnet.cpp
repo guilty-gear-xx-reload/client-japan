@@ -255,7 +255,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
 		getMachineID(g_machineID, "ggxx#reload");
 
 		initUserPalette();
-		readUserPalette();
+		//readUserPalette();
 		DBGOUT_LOG("read palette ok!!\n");
 
 		g_netMgr->startThread();
@@ -1039,6 +1039,7 @@ void ggn_startNetVS(void)
 
 	if (useLobbyServer())
 	{
+		readUserPalette(); 
 		getSettings();
 		enterServer(0);
 		readServer();
@@ -3299,15 +3300,15 @@ void readUserPalette(void)
 		for (int j = 0; j < PALCOUNT; j++)
 		{
 			char fname[1024];
-
 			sprintf(fname, "pal\\%s_%s.pal", g_charaNames[i], PALLETE_NAME_SUFFIX);
 
-			FILE* fp = fopen(fname, "rb");
+			FILE* fp = fopen(fname, "rb"); 
+			// POST po skina postaci do bazki
 			if (fp) 
 			{
 				DWORD* palette = new DWORD[PALLEN];
 
-				zfread((char*)palette, PALLEN * 4, fp);
+				zfread((char*)palette, PALLEN * 4, fp); 
 
 				palette[4] &= 0x00FFFFFF; /* ”²‚«F */
 				for (int k = 1; k < 256; k++)

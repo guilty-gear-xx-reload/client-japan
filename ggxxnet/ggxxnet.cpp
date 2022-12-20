@@ -31,20 +31,6 @@
 // const
 //******************************************************************
 
-char g_paletteNames[CHARACOUNT][256] = {
-	"P(Default)",
-	"K",
-	"S",
-	"HS",
-	"Start",
-	"D",
-	"P(Sp)",
-	"K(Sp)",
-	"S(Sp)",
-	"HS(Sp)",
-	"Start(Sp)",
-	"D(Sp)",
-};
 
 char g_charaNames[CHARACOUNT][256] = {
 	"Sol",
@@ -130,7 +116,7 @@ char				g_machineID[10];
 DWORD				g_scriptCode;
 DWORD				g_startBattleTime;
 WORD				g_oldCS = 1;
-
+char*               PALLETE_NAME_SUFFIX = "skin";
 //-------------------------------------------------------debug
 CRITICAL_SECTION	g_csLogOut;
 char* g_netLog = NULL;
@@ -269,7 +255,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLL, DWORD dwReason, LPVOID lpReserved)
 		getMachineID(g_machineID, "ggxx#reload");
 
 		initUserPalette();
-		readUserPalette();
+		//readUserPalette();
 		DBGOUT_LOG("read palette ok!!\n");
 
 		g_netMgr->startThread();
@@ -1053,6 +1039,7 @@ void ggn_startNetVS(void)
 
 	if (useLobbyServer())
 	{
+		readUserPalette(); 
 		getSettings();
 		enterServer(0);
 		readServer();
@@ -3313,15 +3300,15 @@ void readUserPalette(void)
 		for (int j = 0; j < PALCOUNT; j++)
 		{
 			char fname[1024];
+			sprintf(fname, "pal\\%s_%s.pal", g_charaNames[i], PALLETE_NAME_SUFFIX);
 
-			sprintf(fname, "pal\\%s_%s.pal", g_charaNames[i], g_paletteNames[j]);
-
-			FILE* fp = fopen(fname, "rb");
-			if (fp)
+			FILE* fp = fopen(fname, "rb"); 
+			// POST po skina postaci do bazki
+			if (fp) 
 			{
 				DWORD* palette = new DWORD[PALLEN];
 
-				zfread((char*)palette, PALLEN * 4, fp);
+				zfread((char*)palette, PALLEN * 4, fp); 
 
 				palette[4] &= 0x00FFFFFF; /* ”²‚«F */
 				for (int k = 1; k < 256; k++)

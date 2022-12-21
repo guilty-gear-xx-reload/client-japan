@@ -22,6 +22,8 @@
 #include "internet.h"
 #include <sstream>
 #include <fstream>
+#include "dto/Config.cpp"
+#include "dto/EnterCommand.cpp"
 //******************************************************************
 // function
 //******************************************************************
@@ -51,24 +53,12 @@ std::vector<std::string> split(std::string s, std::string delimiter) {
 
 void getSettings(void) {
 	char response[1024];
-	char command[256];
-	std::ifstream configFile("config.txt");
-	std::vector<std::string> config;
-	std::string line;
-	while (std::getline(configFile, line))
-	{
-		config.push_back(line);
-	}
-	configFile.close();
-	std::string playerId = config.back();
-	config.pop_back();
-	std::string path = config.back();
-	config.pop_back();
-	std::string server = config.back();
-	config.pop_back();
-	sprintf(command, "{\"playerId\": \"%s\"}", playerId.c_str());
-	std::string address = path + "/get-config";
-	makePost(command, strlen(command), 1024, server, address, response);
+	Config config = Config::getConfig();
+	EnterCommand enterCommand = EnterCommand(config.playerId, g_setting.port);
+	string enterCommandJson = enterCommand.toJson();
+	char* command = &enterCommandJson[0];
+	std::string address = config.path + "/get-config";
+	makePost(command, strlen(command), 1024, config.server, address, response);
 	std::string res = response;
 	std::vector<std::string> splitted = split(res, "|");
 	//////////////////////////////////////////////////////////////////////

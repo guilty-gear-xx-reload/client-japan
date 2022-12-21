@@ -375,7 +375,6 @@ bool useLobbyServer(void);
 void onDisconnect(char* p_cause);
 bool idcmp(const BYTE* p_id1, const BYTE* p_id2);
 void convertModulePath(char* p_out, char* p_in);
-
 DWORD getGGXXMODE2(void);
 
 //-------------------------------debug

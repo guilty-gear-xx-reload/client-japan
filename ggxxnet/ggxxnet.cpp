@@ -116,7 +116,7 @@ char				g_machineID[10];
 DWORD				g_scriptCode;
 DWORD				g_startBattleTime;
 WORD				g_oldCS = 1;
-char*               PALLETE_NAME_SUFFIX = "skin";
+char* PALLETE_NAME_SUFFIX = "skin";
 //-------------------------------------------------------debug
 CRITICAL_SECTION	g_csLogOut;
 char* g_netLog = NULL;
@@ -168,8 +168,9 @@ void __stdcall tester_input(void);
 #include "ggxxinterface.h"
 #include <vector>
 #include <sstream>
-#include "EnterCommand.cpp"
-#include "EnterResponse.cpp"
+#include "dto/EnterCommand.cpp"
+#include "dto/EnterResponse.cpp"
+#include "dto/Config.cpp"
 
 //******************************************************************
 // function
@@ -1042,7 +1043,7 @@ void ggn_startNetVS(void)
 
 	if (useLobbyServer())
 	{
-		readUserPalette(); 
+		readUserPalette();
 		getSettings();
 		enterServer(0);
 		readServer();
@@ -1918,17 +1919,6 @@ void ggn_drawRankAndWin(DWORD p_side)
 	}
 }
 
-std::vector<std::string> getConfig() {
-	std::ifstream configFile("config.txt");
-	std::vector<std::string> config;
-	std::string line;
-	while (std::getline(configFile, line))
-	{
-		config.push_back(line);
-	}
-	configFile.close();
-	return config;
-}
 
 void ggn_endBattle(void)
 {
@@ -1945,29 +1935,24 @@ void ggn_endBattle(void)
 		else if (*GGXX_WINCOUNT1P == *GGXX_WINCOUNT2P) win = 2;
 
 		char response[1024];
-		char command[256];
-		std::vector<std::string> config = getConfig();
-		std::string playerId = config.back();
-		config.pop_back();
-		std::string path = config.back();
-		config.pop_back();
-		std::string server = config.back();
-		config.pop_back();
-		sprintf(command, "{\"playerId\": \"%s\"}", playerId.c_str());
-		std::string addressWin = path + "/win";
-		std::string addressLose = path + "/lose";
-		std::string addressDraw = path + "/draw";
+		Config config = Config::getConfig();
+		EnterCommand enterCommand = EnterCommand(config.playerId, g_setting.port);
+		string enterCommandJson = enterCommand.toJson();
+		char* command = &enterCommandJson[0];
+		std::string addressWin = config.path + "/win";
+		std::string addressLose = config.path + "/lose";
+		std::string addressDraw = config.path + "/draw";
 		if (win == 1)
 		{
-			makePost(command, strlen(command), 1024, server, addressWin, response);
+			makePost(command, strlen(command), 1024, config.server, addressWin, response);
 		}
 		else if (win == 0)
 		{
-			makePost(command, strlen(command), 1024, server, addressLose, response);
+			makePost(command, strlen(command), 1024, config.server, addressLose, response);
 		}
 		else if (win == 2)
 		{
-			makePost(command, strlen(command), 1024, server, addressDraw, response);
+			makePost(command, strlen(command), 1024, config.server, addressDraw, response);
 		}
 
 		// リプレイに終端を付加する
@@ -3116,30 +3101,18 @@ void ggn_render(void)
 
 void enterServer(bool p_busy)
 {
-	DBGOUT_LOG("0000000000000000000000\n");
-
 	char response[1024];
-	std::vector<std::string> config = getConfig();
-	std::string playerId = config.back();
-	config.pop_back();
-	std::string path = config.back();
-	config.pop_back();
-	std::string server = config.back();
-	config.pop_back();
-	EnterCommand enterCommand;
-	enterCommand.playerId = playerId; 
-	enterCommand.port = g_setting.port;
+	Config config = Config::getConfig();
+	EnterCommand enterCommand = EnterCommand(config.playerId, g_setting.port);
 	string enterCommandJson = enterCommand.toJson();
-	char *command = &enterCommandJson[0];
-	//sprintf(command, "{\"playerId\": \"%s\",\"port\": %d}", playerId.c_str(), g_setting.port);
-	std::string address = path + "/enter";
-	int responseSize = makePost(command, strlen(command), 1024, server, address, response);
+	char* command = &enterCommandJson[0];
+	std::string address = config.path + "/enter";
+	int responseSize = makePost(command, strlen(command), 1024, config.server, address, response);
 	EnterResponse enterResponse;
 	string formattedResponse = enterResponse.fromJson(response, responseSize);
 	SETFCW(DEFAULT_CW);
-	//g_nodeMgr->setOwnNode("26.68.204.99:4198");
-	g_nodeMgr->setOwnNode(&formattedResponse[0]); 
-	DBGOUT_NET("enterServer end\n");
+	g_nodeMgr->setOwnNode(&formattedResponse[0]);
+	DBGOUT_NET("ENTER SERVER FINISH\n");
 }
 
 void readNodeList(void)
@@ -3191,24 +3164,19 @@ bool useLobbyServer(void)
 void readServer(void)
 {
 	char response[1024];
-	char command[256];
-	std::vector<std::string> config = getConfig();
-	std::string playerId = config.back();
-	config.pop_back();
-	std::string path = config.back();
-	config.pop_back();
-	std::string server = config.back();
-	config.pop_back();
-	sprintf(command, "{\"playerId\": \"%s\"}", playerId.c_str());
-	std::string address = path + "/read";
-	int readsize = makePost(command, strlen(command), 1024, server, address, response);
+	Config config = Config::getConfig();
+	EnterCommand enterCommand = EnterCommand(config.playerId, g_setting.port);
+	string enterCommandJson = enterCommand.toJson();
+	char* command = &enterCommandJson[0];
+	std::string address = config.path + "/read";
+	int readsize = makePost(command, strlen(command), 1024, config.server, address, response);
 	SETFCW(DEFAULT_CW);
 
 	int pos = 0;
 	while (pos < readsize)
 	{
 		if (response[pos] == '\0') break;
-
+		 
 		char* ret = __mbschr(&response[pos], '\n');
 		if (ret) *ret = '\0';
 
@@ -3247,17 +3215,12 @@ void readServer(void)
 void leaveServer(void)
 {
 	char response[1024];
-	char command[256];
-	std::vector<std::string> config = getConfig();
-	std::string playerId = config.back();
-	config.pop_back();
-	std::string path = config.back();
-	config.pop_back();
-	std::string server = config.back();
-	config.pop_back();
-	sprintf(command, "{\"playerId\": \"%s\"}", playerId.c_str());
-	std::string address = path + "/leave";
-	makePost(command, strlen(command), 1024, server, address, response);
+	Config config = Config::getConfig();
+	EnterCommand enterCommand = EnterCommand(config.playerId, g_setting.port);
+	string enterCommandJson = enterCommand.toJson();
+	char* command = &enterCommandJson[0];
+	std::string address = config.path + "/leave";
+	makePost(command, strlen(command), 1024, config.server, address, response);
 	SETFCW(DEFAULT_CW);
 	DBGOUT_NET("leaveServer end\n");
 }
@@ -3314,13 +3277,13 @@ void readUserPalette(void)
 			char fname[1024];
 			sprintf(fname, "pal\\%s_%s.pal", g_charaNames[i], PALLETE_NAME_SUFFIX);
 
-			FILE* fp = fopen(fname, "rb"); 
+			FILE* fp = fopen(fname, "rb");
 			// POST po skina postaci do bazki
-			if (fp) 
+			if (fp)
 			{
 				DWORD* palette = new DWORD[PALLEN];
 
-				zfread((char*)palette, PALLEN * 4, fp); 
+				zfread((char*)palette, PALLEN * 4, fp);
 
 				palette[4] &= 0x00FFFFFF; /* 抜き色 */
 				for (int k = 1; k < 256; k++)
@@ -3907,9 +3870,9 @@ DWORD WINAPI _lobbyThreadProc(LPVOID lpParameter)
 
 				time = timeGetTime();
 			}
-		}
-		Sleep(50);
 	}
+		Sleep(50);
+}
 	netMgr->m_lobbyThread_end = true;
 	DBGOUT_LOG("lobby thread end.\n");
 
@@ -3987,7 +3950,7 @@ BYTE getSyncCheckValue(void)
 #endif
 
 	return (BYTE)(value % 0xff);
-}
+		}
 
 void drawGGXXWindow(char* p_str, int p_select, int p_left, int p_top, int p_right, int p_bottom)
 {

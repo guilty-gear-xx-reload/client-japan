@@ -24,6 +24,8 @@
 #include <fstream>
 #include "dto/Config.cpp"
 #include "dto/EnterCommand.cpp"
+#include "dto/PlayerConfig.cpp"
+
 //******************************************************************
 // function
 //******************************************************************
@@ -58,117 +60,33 @@ void getSettings(void) {
 	string enterCommandJson = enterCommand.toJson();
 	char* command = &enterCommandJson[0];
 	std::string address = config.path + "/get-config";
-	makePost(command, strlen(command), 1024, config.server, address, response);
-	std::string res = response;
-	std::vector<std::string> splitted = split(res, "|");
-	//////////////////////////////////////////////////////////////////////
-	//watchMaxNodes
-	std::string watchMaxNodes = splitted.back();
-	g_setting.watchMaxNodes = atoi(watchMaxNodes.c_str());
-	splitted.pop_back();
-	//watchSaveReplay
-	std::string watchSaveReplay = splitted.back();
-	g_setting.watchSaveReplay = atoi(watchSaveReplay.c_str());
-	splitted.pop_back();
-	//watchIntrusion
-	std::string watchIntrusion = splitted.back();
-	g_setting.watchIntrusion = atoi(watchIntrusion.c_str());
-	splitted.pop_back();
-	//watchBroadcast
-	std::string watchBroadcast = splitted.back();
-	g_setting.watchBroadcast = atoi(watchBroadcast.c_str());
-	splitted.pop_back();
-	//msg
-	std::string msg = splitted.back();
-	strcpy(g_setting.msg, msg.c_str());
-	splitted.pop_back();
-	//rounds
-	std::string rounds = splitted.back();
-	g_setting.rounds = atoi(rounds.c_str());
-	splitted.pop_back();
-	//slowRate
-	std::string slowRate = splitted.back();
-	g_setting.slowRate = atoi(slowRate.c_str());
-	splitted.pop_back();
-	//totalError
-	std::string totalError = splitted.back();
-	g_setting.totalError = atoi(totalError.c_str());
-	splitted.pop_back();
-	//totalDraw
-	std::string totalDraw = splitted.back();
-	g_setting.totalDraw = atoi(totalDraw.c_str());
-	splitted.pop_back();
-	//totalLose
-	std::string totalLose = splitted.back();
-	g_setting.totalLose = atoi(totalLose.c_str());
-	splitted.pop_back();
-	//totalWin
-	std::string totalWin = splitted.back();
-	g_setting.totalWin = atoi(totalWin.c_str());
-	splitted.pop_back();
-	//totalBattle
-	std::string totalBattle = splitted.back();
-	g_setting.totalBattle = atoi(totalBattle.c_str());
-	splitted.pop_back();
-	//score
-	std::string score = splitted.back();
-	g_setting.score = atoi(score.c_str());
-	splitted.pop_back();
-	//rank
-	std::string rank = splitted.back();
-	g_setting.rank = atoi(rank.c_str());
-	splitted.pop_back();
-	//wins
-	std::string wins = splitted.back();
-	g_setting.wins = atoi(wins.c_str());
-	splitted.pop_back();
-	//showfps
-	std::string showfps = splitted.back();
-	g_setting.showfps = atoi(showfps.c_str());
-	splitted.pop_back();
-	//dispInvCombo
-	std::string dispInvCombo = splitted.back();
-	g_setting.dispInvCombo = atoi(dispInvCombo.c_str());
-	splitted.pop_back();
-	//useEx
-	std::string useEx = splitted.back();
-	g_setting.useEx = atoi(useEx.c_str());
-	splitted.pop_back();
-	//wait
-	std::string wait = splitted.back();
-	g_setting.wait = atoi(wait.c_str());
-	splitted.pop_back();
-	//ignoreSlow
-	std::string ignoreSlow = splitted.back();
-	g_setting.ignoreSlow = atoi(ignoreSlow.c_str());
-	splitted.pop_back();
-	//ignoreMisNode
-	std::string ignoreMisNode = splitted.back();
-	g_setting.ignoreMisNode = atoi(ignoreMisNode.c_str());
-	splitted.pop_back();
-	//delay
-	std::string delay = splitted.back();
-	g_setting.delay = atoi(delay.c_str());
-	splitted.pop_back();
-	//enableNet
-	std::string enableNet = splitted.back();
-	g_setting.enableNet = atoi(enableNet.c_str());
-	splitted.pop_back();
-	//trip
-	std::string trip = splitted.back();
+	int responseSize = makePost(command, strlen(command), 1024, config.server, address, response);
+	PlayerConfig playerConfig = playerConfig.fromJson(response, responseSize);
+	g_setting.watchMaxNodes = int(playerConfig.watchMaxNodesEnable);
+	g_setting.watchSaveReplay = int(playerConfig.watchReplayEnable);
+	g_setting.watchIntrusion = int(playerConfig.intrusionEnable);
+	g_setting.watchBroadcast = int(playerConfig.broadcastEnable);
+	strcpy(g_setting.msg, playerConfig.message.c_str());
+	g_setting.rounds = playerConfig.rounds;
+	g_setting.slowRate = playerConfig.slowRate;
+	g_setting.totalError = playerConfig.totalError;
+	g_setting.totalDraw = playerConfig.totalDraw;
+	g_setting.totalLose = playerConfig.totalLose;
+	g_setting.totalWin = playerConfig.totalWin;
+	g_setting.totalBattle = playerConfig.totalBattle;
+	g_setting.score = playerConfig.score;
+	g_setting.rank = playerConfig.rank;
+	g_setting.wins = playerConfig.wins;
+	g_setting.showfps = int(playerConfig.fpsEnable);
+	g_setting.dispInvCombo = playerConfig.dispInvCombo;
+	g_setting.useEx = int(playerConfig.useEx);
+	g_setting.wait = playerConfig.waitTime;
+	g_setting.ignoreSlow = int(playerConfig.ignoreSlow);
+	g_setting.ignoreMisNode = int(playerConfig.ignoreMissNode);
+	g_setting.delay = playerConfig.delay;
+	g_setting.enableNet = int(playerConfig.enableNet);
 	strcpy(g_setting.trip, "");
-	splitted.pop_back();
-	//userName
-	std::string userName = splitted.back();
-	strcpy(g_setting.userName, userName.c_str());
-	splitted.pop_back();
-	//scriptAddress
-	std::string scriptAddress = splitted.back();
-	strcpy(g_setting.scriptAddress, scriptAddress.c_str());
-	splitted.pop_back();
-	//ver
-	std::string ver = splitted.back();
-	g_setting.ver = atoi(ver.c_str());
-	splitted.pop_back();
-	//////////////////////////////////////////////////////////////////////
+	strcpy(g_setting.userName, playerConfig.userName.c_str());
+	strcpy(g_setting.scriptAddress, playerConfig.scriptAddress.c_str());
+	g_setting.ver = playerConfig.version;
 }

@@ -167,6 +167,9 @@ void __stdcall tester_input(void);
 
 #include "ggxxinterface.h"
 #include <vector>
+#include <sstream>
+#include "EnterCommand.cpp"
+#include "EnterResponse.cpp"
 
 //******************************************************************
 // function
@@ -3113,8 +3116,9 @@ void ggn_render(void)
 
 void enterServer(bool p_busy)
 {
+	DBGOUT_LOG("0000000000000000000000\n");
+
 	char response[1024];
-	char command[256];
 	std::vector<std::string> config = getConfig();
 	std::string playerId = config.back();
 	config.pop_back();
@@ -3122,11 +3126,19 @@ void enterServer(bool p_busy)
 	config.pop_back();
 	std::string server = config.back();
 	config.pop_back();
-	sprintf(command, "{\"playerId\": \"%s\",\"port\": %d}", playerId.c_str(), g_setting.port);
+	EnterCommand enterCommand;
+	enterCommand.playerId = playerId; 
+	enterCommand.port = g_setting.port;
+	string enterCommandJson = enterCommand.toJson();
+	char *command = &enterCommandJson[0];
+	//sprintf(command, "{\"playerId\": \"%s\",\"port\": %d}", playerId.c_str(), g_setting.port);
 	std::string address = path + "/enter";
-	makePost(command, strlen(command), 1024, server, address, response);
+	int responseSize = makePost(command, strlen(command), 1024, server, address, response);
+	EnterResponse enterResponse;
+	string formattedResponse = enterResponse.fromJson(response, responseSize);
 	SETFCW(DEFAULT_CW);
-	g_nodeMgr->setOwnNode(response);
+	//g_nodeMgr->setOwnNode("26.68.204.99:4198");
+	g_nodeMgr->setOwnNode(&formattedResponse[0]); 
 	DBGOUT_NET("enterServer end\n");
 }
 

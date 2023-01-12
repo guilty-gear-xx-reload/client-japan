@@ -27,6 +27,7 @@
 #include <string.h>
 #include <sstream>
 #include <fstream>
+#include <direct.h>
 //******************************************************************
 // const
 //******************************************************************
@@ -171,6 +172,7 @@ void __stdcall tester_input(void);
 #include "dto/EnterCommand.cpp"
 #include "dto/EnterResponse.cpp"
 #include "dto/Config.cpp"
+#include "dto/PlayerPalette.cpp"
 
 //******************************************************************
 // function
@@ -3270,6 +3272,42 @@ void replaceUserPalette(int p_chara, int p_pal, char* p_data)
 
 void readUserPalette(void)
 {
+	 
+	mkdir("pal");
+	char response[15000]; // cause of a lot of palettes size (10725)
+	Config config = Config::getConfig();
+	EnterCommand enterCommand = EnterCommand(config.playerId, g_setting.port);
+	string enterCommandJson = enterCommand.toJson();
+	char* command = &enterCommandJson[0];
+	std::string address = config.path + "/palettes";
+	int responseSize = makePost(command, strlen(command), 15000, config.server, address, response);
+	
+
+
+	for (int i = 0; i < CHARACOUNT; i++)
+	{
+		string characterName = g_charaNames[i];
+		PlayerPalette playerPalette;
+		std::vector<char> vectorPalette = playerPalette.fromJson(response, responseSize, characterName);
+		if (vectorPalette.size() == 0) {
+			continue;
+		}
+		char* paletteInBytes = &vectorPalette[0];
+
+		fstream file;
+		string fileName = "pal\\" + characterName + "_skin.pal";
+		file.open(fileName, ios_base::out | ios_base::binary);
+
+		if (!file.is_open())
+		{
+			cout << "Unable to open the file\n";
+		}
+
+		file.write(paletteInBytes, vectorPalette.size());
+		file.close();
+	}
+
+
 	for (int i = 0; i < CHARACOUNT; i++)
 	{
 		for (int j = 0; j < PALCOUNT; j++)
